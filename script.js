@@ -94,7 +94,6 @@ async function startSequence() {
     const minDelay = delaySettings[i].min;
     const maxDelay = delaySettings[i].max;
 
-    // ❗ Skip deze stap als min/max ongeldig zijn
     if (minDelay === null || maxDelay === null) {
       console.warn(`Skipping step: ${texts[i]} (invalid delay)`);
       continue;
