@@ -1,4 +1,4 @@
 # sprint-countdown
 countdown for running
 
-[site](https://heegarthur.github.io/sprint-countdown/)
+[the site here](https://heegarthur.github.io/sprint-countdown/)
