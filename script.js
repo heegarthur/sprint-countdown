@@ -1,164 +1,104 @@
-const textEl = document.getElementById('text-element');
-const startBtn = document.getElementById('start-btn');
-const timerContainer = document.getElementById('timer-container');
-const timerDisplay = document.getElementById('timer');
-const pauseBtn = document.getElementById('pause-btn');
-const stopBtn = document.getElementById('stop-btn');
-
-function safeLoad(value, fallback) {
-  const number = Number(value);
-  const isValid = Number.isFinite(number) && number > 0;
-  return isValid ? number : fallback;
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", Arial, sans-serif;
+    color: #caffca;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-height: 100vh;
 }
 
-
-
-let minGetReady = safeLoad(localStorage.getItem("minGetReady"), 4000);
-let maxGetReady = safeLoad(localStorage.getItem("maxGetReady"), 6000);
-let minOnYourMarks = safeLoad(localStorage.getItem("minOnYourMarks"), 4000);
-let maxOnYourMarks = safeLoad(localStorage.getItem("maxOnYourMarks"), 7000);
-let minSet = safeLoad(localStorage.getItem("minSet"), 3000);
-let maxSet = safeLoad(localStorage.getItem("maxSet"), 6000);
-
-document.getElementById("t1").value = minGetReady;
-document.getElementById("t2").value = maxGetReady;
-document.getElementById("t3").value = minOnYourMarks;
-document.getElementById("t4").value = maxOnYourMarks;
-document.getElementById("t5").value = minSet;
-document.getElementById("t6").value = maxSet;
-
-console.log(minGetReady, maxGetReady, minOnYourMarks, maxOnYourMarks, minSet, maxSet);
-
-const texts = ["Athletes, get ready", "On your marks", "Set"];
-const sounds = ["athletes_get_ready.mp3", "on_your_marks.mp3", "set.mp3"];
-
-const delaySettings = [
-  { min: minGetReady, max: maxGetReady },
-  { min: minOnYourMarks, max: maxOnYourMarks },
-  { min: minSet, max: maxSet }
-];
-
-let timerInterval = null;
-let startTime = 0;
-let elapsed = 0;
-let paused = false;
-
-function randDelay(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+#text-element {
+    margin-top: 4rem;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #caffca;
+    padding: 0 1rem;
 }
 
-function format(ms) {
-  const totalSeconds = ms / 1000;
-  const hrs = Math.floor(totalSeconds / 3600);
-  const mins = Math.floor((totalSeconds % 3600) / 60);
-  const secs = Math.floor(totalSeconds % 60);
-  const centis = Math.floor((totalSeconds - Math.floor(totalSeconds)) * 100);
-
-  return (
-    String(hrs).padStart(2, "0") + ":" +
-    String(mins).padStart(2, "0") + ":" +
-    String(secs).padStart(2, "0") + "." +
-    String(centis).padStart(2, "0")
-  );
+button {
+    background: linear-gradient(145deg, #caffca, #a0ffa0);
+    color: #000;
+    border: none;
+    padding: 1rem 3rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    border-radius: 1.8rem;
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(.25, .8, .25, 1),
+        opacity 0.2s ease;
 }
 
-function updateTimer() {
-  if (!paused) {
-    elapsed = Date.now() - startTime;
-    timerDisplay.textContent = format(elapsed);
-  }
+button:active {
+    transform: scale(0.94);
+    opacity: 0.9;
 }
 
-let audioCtx;
-let startShotBuffer;
-
-async function loadStartShot() {
-  if (!audioCtx) audioCtx = new AudioContext();
-  const response = await fetch("pistol.mp3");
-  const arrayBuffer = await response.arrayBuffer();
-  startShotBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+#stop-btn {
+    background: linear-gradient(145deg, #ff5f5f, #ff3e3e);
 }
 
-function playsound(url) {
-  const audio = new Audio(url);
-  audio.play();
+#pause-btn {
+    background: linear-gradient(145deg, #6eff75, #4cff91);
 }
 
-async function startSequence() {
-  startBtn.disabled = true;
-  document.getElementById("start-btn").style.cursor = "not-allowed";
-  await loadStartShot();
-
-  for (let i = 0; i < texts.length; i++) {
-
-    const minDelay = delaySettings[i].min;
-    const maxDelay = delaySettings[i].max;
-
-    if (minDelay === null || maxDelay === null) {
-      console.warn(`Skipping step: ${texts[i]} (invalid delay)`);
-      continue;
-    }
-
-    textEl.textContent = texts[i];
-    playsound(sounds[i]);
-
-    await new Promise(r => setTimeout(r, randDelay(minDelay, maxDelay)));
-  }
-
-  const source = audioCtx.createBufferSource();
-  source.buffer = startShotBuffer;
-  source.connect(audioCtx.destination);
-  source.start(audioCtx.currentTime);
-
-  textEl.style.display = "none";
-  timerContainer.style.display = "block";
-
-  startTime = Date.now();
-  timerInterval = setInterval(updateTimer, 50);
+#timer-container {
+    margin-top: 2.8rem;
+    padding: 2rem 3rem;
+    border-radius: 2rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(202, 255, 202, 0.2);
+    max-width: 90%;
 }
 
-startBtn.addEventListener("click", startSequence);
+#timer {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: #caffca;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 0 12px rgba(160, 255, 160, 0.5);
+}
 
-pauseBtn.addEventListener("click", () => {
-  paused = !paused;
+#editBox {
+    width: 100%;
+    margin-top: 4.5rem;
+    background: #0d0d0d;
+    padding: 2.5rem 0;
+    border-top: 1px solid #1d1d1d;
+}
 
-  if (paused) {
-    pauseBtn.textContent = "Resume";
-  } else {
-    startTime = Date.now() - elapsed;
-    pauseBtn.textContent = "Pause";
-  }
-});
+#editBox #edit {
+    font-size: 1.9rem;
+    font-weight: 700;
+    padding: 1rem 0;
+    color: #caffca;
+}
 
-stopBtn.addEventListener("click", () => {
-  clearInterval(timerInterval);
-  elapsed = 0;
-  paused = false;
+#editBox div {
+    margin-top: 1.8rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #e0ffe0;
+}
 
-  timerDisplay.textContent = "00:00:00.00";
+#editBox input {
+    width: 80%;
+    max-width: 350px;
+    margin-top: 0.6rem;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    border: 1px solid #2a2a2a;
+    background-color: #111;
+    color: #caffca;
+    font-size: 1.1rem;
+    outline: none;
+    transition: border 0.2s ease;
+}
 
-  timerContainer.style.display = "none";
-  textEl.style.display = "block";
-  startBtn.disabled = false;
-  document.getElementById("start-btn").style.cursor = "pointer";
-
-  pauseBtn.textContent = "Pause";
-  document.getElementById("text-element").innerText = "";
-});
-
-function saveTimes() {
-
-  function safe(val) {
-    let num = Number(val);
-    return (typeof num === "number" && !isNaN(num) && num >= 0) ? num : null;
-  }
-
-  localStorage.setItem("minGetReady", safe(document.getElementById("t1").value));
-  localStorage.setItem("maxGetReady", safe(document.getElementById("t2").value));
-  localStorage.setItem("minOnYourMarks", safe(document.getElementById("t3").value));
-  localStorage.setItem("maxOnYourMarks", safe(document.getElementById("t4").value));
-  localStorage.setItem("minSet", safe(document.getElementById("t5").value));
-  localStorage.setItem("maxSet", safe(document.getElementById("t6").value));
-
-  console.log("saved scores");
+#editBox input:focus {
+    border: 1px solid #6dff6d;
 }
