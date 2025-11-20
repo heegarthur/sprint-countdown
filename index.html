@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprint starter</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div id="text-element"></div>
+    <button id="start-btn">Start</button>
+
+    <div id="timer-container" style="display:none;">
+        <span id="timer">00:00:00</span>
+        <button id="pause-btn">Pause/Stop</button>
+        <div style="margin-top: 1em;"></div>
+        <button id="stop-btn">Restart program</button>
+    </div>
+
+    <div style="margin-top: 5em;"></div>
+    <div id="editBox">
+        <div id="edit">edit</div>
+        <div>random time (ms) after...</div>
+        <div style="margin-top: 1em;"></div>
+        <div>Athletes, get ready (min & max)</div>
+        <input id="t1" type="number" placeholder="Athletes, get ready (min)" oninput="saveTimes()" step="1000">
+        <input id="t2" type="number" placeholder="Athletes, get ready (max)" oninput="saveTimes()" step="1000">
+        <div style="margin-top: 1em;"></div>
+        <div>On your marks (min & max)</div>
+        <input id="t3" type="number" placeholder="On your marks (min)" oninput="saveTimes()" step="1000">
+        <input id="t4" type="number" placeholder="On your marks (max)" oninput="saveTimes()" step="1000">
+        <div style="margin-top: 1em;"></div>
+        <div>Set (min & max)</div>
+        <input id="t5" type="number" placeholder="Set (min)" oninput="saveTimes()" step="1000">
+        <input id="t6" type="number" placeholder="Set (max)" oninput="saveTimes()" step="1000">
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

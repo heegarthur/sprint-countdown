@@ -1,0 +1,110 @@
+/* ---------- GLOBAL LAYOUT ---------- */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", Arial, sans-serif;
+    color: #caffca;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-height: 100vh;
+}
+
+/* ---------- MAIN TEXT ---------- */
+#text-element {
+    margin-top: 4rem;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #caffca;
+    padding: 0 1rem;
+}
+
+/* ---------- BUTTONS (iPhone-style) ---------- */
+button {
+    background: linear-gradient(145deg, #caffca, #a0ffa0);
+    color: #000;
+    border: none;
+    padding: 1rem 3rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    border-radius: 1.8rem;
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(.25,.8,.25,1),
+                opacity 0.2s ease;
+}
+
+button:active {
+    transform: scale(0.94);
+    opacity: 0.9;
+}
+
+#stop-btn {
+    background: linear-gradient(145deg, #ff5f5f, #ff3e3e);
+}
+
+#pause-btn {
+    background: linear-gradient(145deg, #6eff75, #4cff91);
+}
+
+/* ---------- TIMER DISPLAY ---------- */
+#timer-container {
+    margin-top: 2.8rem;
+    padding: 2rem 3rem;
+    border-radius: 2rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(202, 255, 202, 0.2);
+    max-width: 90%;
+}
+
+#timer {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: #caffca;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 0 12px rgba(160,255,160,0.5);
+}
+
+/* ---------- EDIT PANEL (iPhone settings page look) ---------- */
+#editBox {
+    width: 100%;
+    margin-top: 4.5rem;
+    background: #0d0d0d;
+    padding: 2.5rem 0;
+    border-top: 1px solid #1d1d1d;
+}
+
+#editBox #edit {
+    font-size: 1.9rem;
+    font-weight: 700;
+    padding: 1rem 0;
+    color: #caffca;
+}
+
+#editBox div {
+    margin-top: 1.8rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #e0ffe0;
+}
+
+/* ---------- INPUTS ---------- */
+#editBox input {
+    width: 80%;
+    max-width: 350px;
+    margin-top: 0.6rem;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    border: 1px solid #2a2a2a;
+    background-color: #111;
+    color: #caffca;
+    font-size: 1.1rem;
+    outline: none;
+    transition: border 0.2s ease;
+}
+
+#editBox input:focus {
+    border: 1px solid #6dff6d;
+}
