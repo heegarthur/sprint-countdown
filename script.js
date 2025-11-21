@@ -6,9 +6,12 @@ const pauseBtn = document.getElementById('pause-btn');
 const stopBtn = document.getElementById('stop-btn');
 
 function safeLoad(value, fallback) {
-    const num = Number(value);
-    return Number.isFinite(num) && num > 0 ? num : fallback;
+  const number = Number(value);
+  const isValid = Number.isFinite(number) && number > 0;
+  return isValid ? number : fallback;
 }
+
+
 
 let minGetReady = safeLoad(localStorage.getItem("minGetReady"), 4000);
 let maxGetReady = safeLoad(localStorage.getItem("maxGetReady"), 6000);
@@ -17,78 +20,22 @@ let maxOnYourMarks = safeLoad(localStorage.getItem("maxOnYourMarks"), 7000);
 let minSet = safeLoad(localStorage.getItem("minSet"), 3000);
 let maxSet = safeLoad(localStorage.getItem("maxSet"), 6000);
 
-t1.value = minGetReady;
-t2.value = maxGetReady;
-t3.value = minOnYourMarks;
-t4.value = maxOnYourMarks;
-t5.value = minSet;
-t6.value = maxSet;
+document.getElementById("t1").value = minGetReady;
+document.getElementById("t2").value = maxGetReady;
+document.getElementById("t3").value = minOnYourMarks;
+document.getElementById("t4").value = maxOnYourMarks;
+document.getElementById("t5").value = minSet;
+document.getElementById("t6").value = maxSet;
+
+console.log(minGetReady, maxGetReady, minOnYourMarks, maxOnYourMarks, minSet, maxSet);
 
 const texts = ["Athletes, get ready", "On your marks", "Set"];
-const soundFiles = ["athletes_get_ready.mp3", "on_your_marks.mp3", "set.mp3"];
-
-let audioCtx = null;
-let buffers = {};
-let pistol = null;
-
-function randDelay(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function format(ms) {
-    const s = ms / 1000;
-    return `${String(Math.floor(s/3600)).padStart(2,"0")}:${String(Math.floor((s%3600)/60)).padStart(2,"0")}:${String(Math.floor(s%60)).padStart(2,"0")}.${String(Math.floor((s%1)*100)).padStart(2,"0")}`;
-}
-
-function updateTimer() {
-    if (!paused) {
-        elapsed = Date.now() - startTime;
-        timerDisplay.textContent = format(elapsed);
-    }
-}
-
-async function loadBuffer(file) {
-    const r = await fetch(file);
-    const b = await r.arrayBuffer();
-    return await audioCtx.decodeAudioData(b);
-}
-
-function play(buf) {
-    const src = audioCtx.createBufferSource();
-    src.buffer = buf;
-    src.connect(audioCtx.destination);
-    src.start();
-}
-
-async function startSequence() {
-    startBtn.disabled = true;
-
-    delaySettings[0].min = Number(t1.value);
-    delaySettings[0].max = Number(t2.value);
-    delaySettings[1].min = Number(t3.value);
-    delaySettings[1].max = Number(t4.value);
-    delaySettings[2].min = Number(t5.value);
-    delaySettings[2].max = Number(t6.value);
-
-    for (let i = 0; i < texts.length; i++) {
-        textEl.textContent = texts[i];
-        play(buffers[soundFiles[i]]);
-        await new Promise(r => setTimeout(r, randDelay(delaySettings[i].min, delaySettings[i].max)));
-    }
-
-    play(pistol);
-
-    textEl.style.display = "none";
-    timerContainer.style.display = "block";
-
-    startTime = Date.now();
-    timerInterval = setInterval(updateTimer, 50);
-}
+const sounds = ["athletes_get_ready.mp3", "on_your_marks.mp3", "set.mp3"];
 
 const delaySettings = [
-    { min: minGetReady, max: maxGetReady },
-    { min: minOnYourMarks, max: maxOnYourMarks },
-    { min: minSet, max: maxSet }
+  { min: minGetReady, max: maxGetReady },
+  { min: minOnYourMarks, max: maxOnYourMarks },
+  { min: minSet, max: maxSet }
 ];
 
 let timerInterval = null;
@@ -96,50 +43,122 @@ let startTime = 0;
 let elapsed = 0;
 let paused = false;
 
-startBtn.addEventListener("click", async () => {
-    if (!audioCtx) {
-        audioCtx = new AudioContext();
-        await audioCtx.resume();
+function randDelay(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function format(ms) {
+  const totalSeconds = ms / 1000;
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = Math.floor(totalSeconds % 60);
+  const centis = Math.floor((totalSeconds - Math.floor(totalSeconds)) * 100);
+
+  return (
+    String(hrs).padStart(2, "0") + ":" +
+    String(mins).padStart(2, "0") + ":" +
+    String(secs).padStart(2, "0") + "." +
+    String(centis).padStart(2, "0")
+  );
+}
+
+function updateTimer() {
+  if (!paused) {
+    elapsed = Date.now() - startTime;
+    timerDisplay.textContent = format(elapsed);
+  }
+}
+
+let audioCtx;
+let startShotBuffer;
+
+async function loadStartShot() {
+  if (!audioCtx) audioCtx = new AudioContext();
+  const response = await fetch("pistol.mp3");
+  const arrayBuffer = await response.arrayBuffer();
+  startShotBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+}
+
+function playsound(url) {
+  const audio = new Audio(url);
+  audio.play();
+}
+
+async function startSequence() {
+  startBtn.disabled = true;
+  document.getElementById("start-btn").style.cursor = "not-allowed";
+  await loadStartShot();
+
+  for (let i = 0; i < texts.length; i++) {
+
+    const minDelay = delaySettings[i].min;
+    const maxDelay = delaySettings[i].max;
+
+    if (minDelay === null || maxDelay === null) {
+      console.warn(`Skipping step: ${texts[i]} (invalid delay)`);
+      continue;
     }
 
-    if (Object.keys(buffers).length === 0) {
-        const unlock = new Audio();
-        unlock.src = "";
-        unlock.play().catch(() => {});
-        for (let s of soundFiles) buffers[s] = await loadBuffer(s);
-        pistol = await loadBuffer("pistol.mp3");
-    }
+    textEl.textContent = texts[i];
+    playsound(sounds[i]);
 
-    startSequence();
-});
+    await new Promise(r => setTimeout(r, randDelay(minDelay, maxDelay)));
+  }
+
+  const source = audioCtx.createBufferSource();
+  source.buffer = startShotBuffer;
+  source.connect(audioCtx.destination);
+  source.start(audioCtx.currentTime);
+
+  textEl.style.display = "none";
+  timerContainer.style.display = "block";
+
+  startTime = Date.now();
+  timerInterval = setInterval(updateTimer, 50);
+}
+
+startBtn.addEventListener("click", startSequence);
 
 pauseBtn.addEventListener("click", () => {
-    paused = !paused;
-    if (!paused) startTime = Date.now() - elapsed;
-    pauseBtn.textContent = paused ? "Resume" : "Pause";
+  paused = !paused;
+
+  if (paused) {
+    pauseBtn.textContent = "Resume";
+  } else {
+    startTime = Date.now() - elapsed;
+    pauseBtn.textContent = "Pause";
+  }
 });
 
 stopBtn.addEventListener("click", () => {
-    clearInterval(timerInterval);
-    elapsed = 0;
-    paused = false;
-    timerDisplay.textContent = "00:00:00.00";
-    timerContainer.style.display = "none";
-    textEl.style.display = "block";
-    startBtn.disabled = false;
-    pauseBtn.textContent = "Pause";
-    textEl.textContent = "";
+  clearInterval(timerInterval);
+  elapsed = 0;
+  paused = false;
+
+  timerDisplay.textContent = "00:00:00.00";
+
+  timerContainer.style.display = "none";
+  textEl.style.display = "block";
+  startBtn.disabled = false;
+  document.getElementById("start-btn").style.cursor = "pointer";
+
+  pauseBtn.textContent = "Pause";
+  document.getElementById("text-element").innerText = "";
 });
 
 function saveTimes() {
-    function safe(v) {
-        const n = Number(v);
-        return Number.isFinite(n) && n > 0 ? n : "";
-    }
-    localStorage.setItem("minGetReady", safe(t1.value));
-    localStorage.setItem("maxGetReady", safe(t2.value));
-    localStorage.setItem("minOnYourMarks", safe(t3.value));
-    localStorage.setItem("maxOnYourMarks", safe(t4.value));
-    localStorage.setItem("minSet", safe(t5.value));
-    localStorage.setItem("maxSet", safe(t6.value));
+
+  function safe(val) {
+    let num = Number(val);
+    return (typeof num === "number" && !isNaN(num) && num >= 0) ? num : null;
+  }
+
+  localStorage.setItem("minGetReady", safe(document.getElementById("t1").value));
+  localStorage.setItem("maxGetReady", safe(document.getElementById("t2").value));
+  localStorage.setItem("minOnYourMarks", safe(document.getElementById("t3").value));
+  localStorage.setItem("maxOnYourMarks", safe(document.getElementById("t4").value));
+  localStorage.setItem("minSet", safe(document.getElementById("t5").value));
+  localStorage.setItem("maxSet", safe(document.getElementById("t6").value));
+
+  console.log("saved scores");
 }
