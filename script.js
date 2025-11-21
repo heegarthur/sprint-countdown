@@ -6,8 +6,8 @@ const pauseBtn = document.getElementById('pause-btn');
 const stopBtn = document.getElementById('stop-btn');
 
 function safeLoad(value, fallback) {
-    const number = Number(value);
-    return Number.isFinite(number) && number >= 0 ? number : fallback;
+    const num = Number(value);
+    return Number.isFinite(num) && num > 0 ? num : fallback;
 }
 
 let minGetReady = safeLoad(localStorage.getItem("minGetReady"), 4000);
@@ -25,7 +25,65 @@ t5.value = minSet;
 t6.value = maxSet;
 
 const texts = ["Athletes, get ready", "On your marks", "Set"];
-const sounds = ["athletes_get_ready.mp3", "on_your_marks.mp3", "set.mp3"];
+const soundFiles = ["athletes_get_ready.mp3", "on_your_marks.mp3", "set.mp3"];
+
+let audioCtx = null;
+let buffers = {};
+let pistol = null;
+
+function randDelay(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function format(ms) {
+    const s = ms / 1000;
+    return `${String(Math.floor(s/3600)).padStart(2,"0")}:${String(Math.floor((s%3600)/60)).padStart(2,"0")}:${String(Math.floor(s%60)).padStart(2,"0")}.${String(Math.floor((s%1)*100)).padStart(2,"0")}`;
+}
+
+function updateTimer() {
+    if (!paused) {
+        elapsed = Date.now() - startTime;
+        timerDisplay.textContent = format(elapsed);
+    }
+}
+
+async function loadBuffer(file) {
+    const r = await fetch(file);
+    const b = await r.arrayBuffer();
+    return await audioCtx.decodeAudioData(b);
+}
+
+function play(buf) {
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.start();
+}
+
+async function startSequence() {
+    startBtn.disabled = true;
+
+    delaySettings[0].min = Number(t1.value);
+    delaySettings[0].max = Number(t2.value);
+    delaySettings[1].min = Number(t3.value);
+    delaySettings[1].max = Number(t4.value);
+    delaySettings[2].min = Number(t5.value);
+    delaySettings[2].max = Number(t6.value);
+
+    for (let i = 0; i < texts.length; i++) {
+        textEl.textContent = texts[i];
+        play(buffers[soundFiles[i]]);
+        await new Promise(r => setTimeout(r, randDelay(delaySettings[i].min, delaySettings[i].max)));
+    }
+
+    play(pistol);
+
+    textEl.style.display = "none";
+    timerContainer.style.display = "block";
+
+    startTime = Date.now();
+    timerInterval = setInterval(updateTimer, 50);
+}
 
 const delaySettings = [
     { min: minGetReady, max: maxGetReady },
@@ -38,95 +96,18 @@ let startTime = 0;
 let elapsed = 0;
 let paused = false;
 
-function randDelay(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function format(ms) {
-    const totalSeconds = ms / 1000;
-    const hrs = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
-    const secs = Math.floor(totalSeconds % 60);
-    const centis = Math.floor((totalSeconds - Math.floor(totalSeconds)) * 100);
-    return (
-        String(hrs).padStart(2, "0") + ":" +
-        String(mins).padStart(2, "0") + ":" +
-        String(secs).padStart(2, "0") + "." +
-        String(centis).padStart(2, "0")
-    );
-}
-
-function updateTimer() {
-    if (!paused) {
-        elapsed = Date.now() - startTime;
-        timerDisplay.textContent = format(elapsed);
-    }
-}
-
-let audioCtx = null;
-let startShotBuffer = null;
-let soundBuffers = {};
-
-async function loadAudioFile(url) {
-    const response = await fetch(url);
-    const data = await response.arrayBuffer();
-    return await audioCtx.decodeAudioData(data);
-}
-
-function playBuffer(buffer) {
-    const src = audioCtx.createBufferSource();
-    src.buffer = buffer;
-    src.connect(audioCtx.destination);
-    src.start();
-}
-
-async function startSequence() {
-    startBtn.disabled = true;
-    startBtn.style.cursor = "not-allowed";
-
-    delaySettings[0].min = Number(t1.value);
-    delaySettings[0].max = Number(t2.value);
-    delaySettings[1].min = Number(t3.value);
-    delaySettings[1].max = Number(t4.value);
-    delaySettings[2].min = Number(t5.value);
-    delaySettings[2].max = Number(t6.value);
-
-    for (let i = 0; i < texts.length; i++) {
-        textEl.textContent = texts[i];
-        playBuffer(soundBuffers[sounds[i]]);
-        const delay = randDelay(delaySettings[i].min, delaySettings[i].max);
-        await new Promise(r => setTimeout(r, delay));
-    }
-
-    playBuffer(startShotBuffer);
-
-    textEl.style.display = "none";
-    timerContainer.style.display = "block";
-
-    startTime = Date.now();
-    timerInterval = setInterval(updateTimer, 50);
-}
-
 startBtn.addEventListener("click", async () => {
     if (!audioCtx) {
         audioCtx = new AudioContext();
         await audioCtx.resume();
     }
 
-    try {
+    if (Object.keys(buffers).length === 0) {
         const unlock = new Audio();
-        unlock.src = "data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA";
-        await unlock.play();
-    } catch(e) {}
-
-    if (!startShotBuffer) {
-        startShotBuffer = await loadAudioFile("pistol.mp3");
-    }
-
-    for (let i = 0; i < sounds.length; i++) {
-        if (!soundBuffers[sounds[i]]) {
-            soundBuffers[sounds[i]] = await loadAudioFile(sounds[i]);
-        }
+        unlock.src = "";
+        unlock.play().catch(() => {});
+        for (let s of soundFiles) buffers[s] = await loadBuffer(s);
+        pistol = await loadBuffer("pistol.mp3");
     }
 
     startSequence();
@@ -134,12 +115,8 @@ startBtn.addEventListener("click", async () => {
 
 pauseBtn.addEventListener("click", () => {
     paused = !paused;
-    if (paused) {
-        pauseBtn.textContent = "Resume";
-    } else {
-        startTime = Date.now() - elapsed;
-        pauseBtn.textContent = "Pause";
-    }
+    if (!paused) startTime = Date.now() - elapsed;
+    pauseBtn.textContent = paused ? "Resume" : "Pause";
 });
 
 stopBtn.addEventListener("click", () => {
@@ -150,15 +127,14 @@ stopBtn.addEventListener("click", () => {
     timerContainer.style.display = "none";
     textEl.style.display = "block";
     startBtn.disabled = false;
-    startBtn.style.cursor = "pointer";
     pauseBtn.textContent = "Pause";
     textEl.textContent = "";
 });
 
 function saveTimes() {
-    function safe(val) {
-        const num = Number(val);
-        return Number.isFinite(num) && num >= 0 ? num : null;
+    function safe(v) {
+        const n = Number(v);
+        return Number.isFinite(n) && n > 0 ? n : "";
     }
     localStorage.setItem("minGetReady", safe(t1.value));
     localStorage.setItem("maxGetReady", safe(t2.value));
