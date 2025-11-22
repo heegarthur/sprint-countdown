@@ -52,7 +52,7 @@ function format(ms) {
   const mins = Math.floor((total % 3600) / 60);
   const secs = Math.floor(total % 60);
   const centis = Math.floor((ms % 1000) / 10);
-  return `${String(hrs).padStart(2,"0")}:${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}.${String(centis).padStart(2,"0")}`;
+  return `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}.${String(centis).padStart(2, "0")}`;
 }
 
 function updateTimer() {
@@ -64,7 +64,7 @@ function updateTimer() {
 
 function playAudioElement(a) {
   const p = a.play();
-  if (p && p.catch) return p.catch(()=>{});
+  if (p && p.catch) return p.catch(() => { });
   return Promise.resolve();
 }
 
@@ -85,13 +85,34 @@ async function runSequence(audioEls) {
     await new Promise(r => setTimeout(r, delay));
   }
 
-  await playAudioElement(audioEls[3]);
+  textEl.textContent = ""; 
 
-  textEl.style.display = "none";
-  timerContainer.style.display = "block";
-  startTime = Date.now();
-  timerInterval = setInterval(updateTimer, 50);
+  await new Promise((resolve, reject) => {
+    const pistol = audioEls[3];
+
+    function onPlaying() {
+      pistol.removeEventListener("playing", onPlaying);
+
+      textEl.style.display = "none";
+      timerContainer.style.display = "block";
+      startTime = Date.now();
+      timerInterval = setInterval(updateTimer, 50);
+
+      resolve();
+    }
+
+    pistol.addEventListener("playing", onPlaying);
+    pistol.play().catch(e => {
+      pistol.removeEventListener("playing", onPlaying);
+      textEl.style.display = "none";
+      timerContainer.style.display = "block";
+      startTime = Date.now();
+      timerInterval = setInterval(updateTimer, 50);
+      resolve();
+    });
+  });
 }
+
 
 startBtn.addEventListener("click", async () => {
   const a0 = new Audio(files[0]);
@@ -109,10 +130,10 @@ startBtn.addEventListener("click", async () => {
   a2.load();
   pistol.load();
 
-  try { await a0.play().catch(()=>{}); a0.pause(); a0.currentTime = 0; } catch(e){}
-  try { await a1.play().catch(()=>{}); a1.pause(); a1.currentTime = 0; } catch(e){}
-  try { await a2.play().catch(()=>{}); a2.pause(); a2.currentTime = 0; } catch(e){}
-  try { await pistol.play().catch(()=>{}); pistol.pause(); pistol.currentTime = 0; } catch(e){}
+  try { await a0.play().catch(() => { }); a0.pause(); a0.currentTime = 0; } catch (e) { }
+  try { await a1.play().catch(() => { }); a1.pause(); a1.currentTime = 0; } catch (e) { }
+  try { await a2.play().catch(() => { }); a2.pause(); a2.currentTime = 0; } catch (e) { }
+  try { await pistol.play().catch(() => { }); pistol.pause(); pistol.currentTime = 0; } catch (e) { }
 
   await runSequence([a0, a1, a2, pistol]);
 });
