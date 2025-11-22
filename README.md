@@ -3,11 +3,6 @@ countdown for running
 
 [browser site here](https://heegarthur.github.io/sprint-countdown/)
 
-
-browser site [here](https://heegarthur.github.io/learn-space/)
-
-choose the [latest release](https://github.com/heegarthur/learn-space/releases/latest)
-
 ---
 
 ## 💬 Feature request
